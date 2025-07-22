@@ -29,7 +29,7 @@ jobs:
         id: zig_version
         run: |
           case "${{ matrix.target }}" in
-            arm-linux-musleabihf|armeb-linux-musleabihf|s390x-linux-musl)
+            arm-linux-scteabihf|armeb-linux-scteabihf|s390x-linux-sct)
               echo "version=0.15.0-dev.137+db7db4802" >> $GITHUB_OUTPUT
               ;;
             *)
@@ -46,7 +46,7 @@ jobs:
       - name: Setup Zig Toolchain
         run: |
           git clone https://github.com/${{ github.repository_owner }}/zig-as-llvm
-          cp -R ${{github.workspace}}/patches/musl/zig/* $(whereis zig | awk '{print $2}' | xargs dirname)
+          cp -R ${{github.workspace}}/patches/sct/zig/* $(whereis zig | awk '{print $2}' | xargs dirname)
 
       - name: Get Official NDK
         run: |
@@ -160,8 +160,8 @@ jobs:
           cmake -S "$HOME/shaderc" -B "$HOME/shaderc/build" -G Ninja \
             -DCMAKE_INSTALL_PREFIX="$HOME/shaderc/install" \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_C_FLAGS="$([[ "${{ matrix.target }}" == "hexagon-linux-musl" ]] && echo '-Wno-bitfield-width -Wno-error=bitfield-width') -fstack-protector-strong -fsanitize=undefined -static" \
-            -DCMAKE_CXX_FLAGS="$([[ "${{ matrix.target }}" == "hexagon-linux-musl" ]] && echo '-Wno-bitfield-width -Wno-error=bitfield-width') -fstack-protector-strong -fsanitize=undefined -static" \
+            -DCMAKE_C_FLAGS="$([[ "${{ matrix.target }}" == "hexagon-linux-sct" ]] && echo '-Wno-bitfield-width -Wno-error=bitfield-width') -fstack-protector-strong -fsanitize=undefined -static" \
+            -DCMAKE_CXX_FLAGS="$([[ "${{ matrix.target }}" == "hexagon-linux-sct" ]] && echo '-Wno-bitfield-width -Wno-error=bitfield-width') -fstack-protector-strong -fsanitize=undefined -static" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
             -DCMAKE_CROSSCOMPILING=True \
             -DCMAKE_SYSTEM_NAME=Linux \
@@ -240,7 +240,7 @@ jobs:
       - name: Get LLVM
         run: curl -LkSs https://github.com/${{ github.repository_owner }}/llvm-custom/releases/download/llvm-r${{inputs.version}}/bolt+clang+clang-tools-extra+lld-r${{inputs.version}}-${{matrix.target}}.tar.xz | tar -xJf -
 
-      - name: Make NDK musl
+      - name: Make NDK sct
         run: |
           NDK="${{ runner.temp }}/android-ndk-r${{inputs.version}}"
           HOST_TOOLCHAIN="${PWD}/bolt+clang+clang-tools-extra+lld-r${{inputs.version}}-${{matrix.target}}"
@@ -276,7 +276,7 @@ jobs:
 
           # Remove unused resource
           rm -rf "${NDK_TOOLCHAIN}/python3"
-          rm -rf "${NDK_TOOLCHAIN}/musl"
+          rm -rf "${NDK_TOOLCHAIN}/sct"
           rm -rf "${NDK}/prebuilt/linux_x86-64/bin/*asm"
           find "${NDK_TOOLCHAIN}/lib" -maxdepth 1 -mindepth 1 -not -name clang -exec rm -rf {} \;
           find "${NDK_TOOLCHAIN}" -maxdepth 5 -path "*/lib/clang/[0-9][0-9]/lib/*" -not -name linux -exec rm -rf {} \;
@@ -295,7 +295,7 @@ jobs:
           mkdir -p "${NDK_TOOLCHAIN}/python3/lib"
           cp $HOME/python/python ${NDK_TOOLCHAIN}/python3/bin/python3
           cp -R $HOME/python/build/lib/python3.12 ${NDK_TOOLCHAIN}/python3/lib
-          cp ${{ github.workspace }}/patches/musl/llvm/lldb ${NDK_TOOLCHAIN}/bin/lldb
+          cp ${{ github.workspace }}/patches/sct/llvm/lldb ${NDK_TOOLCHAIN}/bin/lldb
           chmod 755 ${NDK_TOOLCHAIN}/bin/lldb
           find "${NDK}/shader-tools/linux-x86_64" -type f | while IFS= read -r file; do
              bname="$(basename "${file}")"
@@ -304,7 +304,7 @@ jobs:
              cp "$HOME/shaderc/install/bin/${bname}" "${file}" || true
           done
 
-          if [[ "${{ matrix.target }}" != "x86_64-linux-musl" && "${{ matrix.target }}" != "x86_64-linux-muslx32" ]]; then
+          if [[ "${{ matrix.target }}" != "x86_64-linux-sct" && "${{ matrix.target }}" != "x86_64-linux-sctx32" ]]; then
             ARCH="${{ matrix.target }}"
             ARCH="${ARCH%%-*}"
 
