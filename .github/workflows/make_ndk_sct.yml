@@ -29,7 +29,7 @@ jobs:
         id: zig_version
         run: |
           case "${{ matrix.target }}" in
-            arm-linux-sctabihf|armeb-linux-sctabihf|s390x-linux-sct)
+            arm-linux-scteabihf|armeb-linux-scteabihf|s390x-linux-sct)
               echo "version=0.15.0-dev.137+db7db4802" >> $GITHUB_OUTPUT
               ;;
             *)
